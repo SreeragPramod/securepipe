@@ -20,7 +20,7 @@ def divide(a, b):
     """
     if b == 0:
         raise ValueError("Cannot divide by zero.")
-        return a / b
+    return a / b
 
 def square_root(a):
     """ Return the square root of a.
@@ -28,4 +28,4 @@ def square_root(a):
     """
     if a < 0:
         raise ValueError("Cannot take square root of a negative number.")
-        return a ** 0.5
+    return a ** 0.5

@@ -16,7 +16,7 @@ class TestAdd:
 
 class TestSubtract:
     def test_subtract_two_positive_numbers(self):
-        assert(10, 4) == 6
+        assert subtract(10, 4) == 6
     
     def test_subtract_negative_result(self):
         assert subtract(3, 7) == -4
@@ -33,7 +33,7 @@ class TestDivide:
         assert divide(10, 2) == 5.0
 
     def test_divide_by_zero_raises_error(self):
-        with pytest.raises(ValueError, match="Cannot divide by zero"):
+        with pytest.raises(ValueError, match="Cannot divide by zero."):
             divide(10, 0)
 
 class TestSquareRoot:
