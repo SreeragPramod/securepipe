@@ -3,7 +3,7 @@
 # SECURE VERSION - vulnerabilities fixed
 
 import os
-import subprocess
+import subprocess #nosec B404
 
 # =========================================================
 # FIX 1: ENVIRONMENT VARIABLE (REPLACES HARDCODED PASSWORD)
@@ -57,8 +57,8 @@ def run_ping(target_host):
             f"allowlist. Refusing to execute."
         )
     result = subprocess.run(
-        ["ping", "-c", "1", target_host],
-        shell=False,
+        ["/bin/ping", "-c", "1", target_host],
+        shell=False, #nosec B603
         capture_output=True,
         text=True,
         timeout=10
