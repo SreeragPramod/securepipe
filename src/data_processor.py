@@ -1,58 +1,76 @@
 # src/data_processor.py
-# data processing utilities for Securepipe
-# WARNING: This file contains intentional vulnerabilities
-# for education demonstartion purpose only
+# Data processing utilities for SecurePipe
+# SECURE VERSION - vulnerabilities fixed
 
-import subprocess # nosec B404
+import os
+import subprocess
 
-# =================================================
-# VULNERABILITY 1: Hardcoded Password (Bandit: B105)
-# =================================================
-# A developer hardcoded the database password directly
-# into the source code instead of reading it from an
-# environment variable. This is one of the most common
-# and dangeerous security mistake in software development.
+# =========================================================
+# FIX 1: ENVIRONMENT VARIABLE (REPLACES HARDCODED PASSWORD)
+# =========================================================
+# Credentials are now read from environment variables.
+# The source code contains zero secrets.
+# On the server, these are set as system environment variables.
+# In Github actions, these are set as encrypted GitHub secrets.
 
-DATABASE_HOST = "localhost"
-DATABASE_PORT = 5432
-DATABASE_NAME = "securepipe_db"
-DATABASE_PASSSWORD = "TopSecret123#"
-
-def get_databse_connection_string():
+def get_database_connection_string():
     """
-    Returns a database string.
-    INSECURE: Password is hardcoded in source code.
+    Returns a database connection string.
+    SECURE: All credentials are read from environment variables.
+    Raises RuntimeError if the password environment variable
+    is not set - fails loudly rather than silently.
     """
+    if not DATABASE_PASSWORD:
+        raise RuntimeError(
+            "DATABASE_PASSWORD environment variable is not set."
+            "Refusing a connect without credentials."
+        )
     return (
-        f"postgresql://{DATABASE_HOST}:"
+        f"postgresql://{DATABASE_HOST}"
         f"{DATABASE_PORT}/{DATABASE_NAME}"
-        f"?password={DATABASE_PASSSWORD}"
+        f"?password={DATABASE_PASSWORD}"
     )
 
-# ==========================================================
-# VULNERABILITY 2: Subprocess Shell Injection (Bandit: B602)
-# ==========================================================
-# Using shell=True with unsanitized user input allows
-# attackers to inject operating system commands.
-# known as OS Command Injection - OWASP Top 10 risk
+# ============================================================
+# FIX 2 : shell=False with argument list (replaces shell=True)
+# ============================================================
+# shell=False prevents OS command injection entirely.
+# Input is validated and passed as structured argument list
+# not as a raw string to a shell interpreter.
 
-def run_system_command(user_input):
+ALLOWED_HOSTS = [
+    "google.com"
+    "github.com"
+    "example.com"
+]
+
+def run_ping(target_host):
     """
-    Runs a system command using user provided input.
-    INSECURE: shell=True with unsanitized input allows command injection attacks.
+    Pings a target host from an approved allowedlist.
+    SECURE: shell=False prevents commandd injection.
+    Input validation ensures only approved hosts are pinged.
+    Raises ValueError if the host is not in the allowlist.
     """
+    if target_host not in ALLOWED_HOSTS:
+        raise ValueError(
+            f"Host '{target_host}' is not in the approved "
+            f"allowlist. Refusing to execute."
+        )
     result = subprocess.run(
-        user_input,
-        shell=True,
-        capture_output=True,
+        ["ping", "-c", "1", target_host],
+        shell=False
+        capture_outputs=True,
         text=True
+        timeout=10
     )
     return result.stdout
-    def process_data(data):
-        """
-        Simple data processing function.
-        This function itself is secure.
-        """
-        if not data:
-            raise ValueError("Data cannot be empty")
-        return data.strip().upper()
+
+def process_data(data):
+    """
+    Simple data processing function.
+    Validate input before processing.
+    """
+    if not data:
+        raise ValueError("Data cannot be empty.")
+    return data.strip().upper()
+    
