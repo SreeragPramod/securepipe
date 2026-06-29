@@ -58,9 +58,9 @@ def run_ping(target_host):
         )
     result = subprocess.run(
         ["ping", "-c", "1", target_host],
-        shell=False
-        capture_outputs=True,
-        text=True
+        shell=False,
+        capture_output=True,
+        text=True,
         timeout=10
     )
     return result.stdout
@@ -73,4 +73,3 @@ def process_data(data):
     if not data:
         raise ValueError("Data cannot be empty.")
     return data.strip().upper()
-    
