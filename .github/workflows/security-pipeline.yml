@@ -8,7 +8,6 @@ on:
     branches:
       - main
 
-
 env:
   PYTHON_VERSION: "3.13"
 
@@ -16,29 +15,58 @@ jobs:
   security-scan:
     name: SAST Security Scan
     runs-on: ubuntu-latest
+
     steps:
+
       - name: Checkout repository
         uses: actions/checkout@v4
+
       - name: Set up Python ${{ env.PYTHON_VERSION }}
         uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
+
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
+
+      - name: Run Flake8 Code Quality Check
+        run: |
+          flake8 src/ tests/ \
+            --max-line-length=88 \
+            --extend-ignore=E203 \
+            --statistics \
+            --count
+
+      - name: Run Black Code Formatter Check
+        run: |
+          black --check --diff src/ tests/
+
       - name: Run Bandit SAST Security Scan
         run: |
           bandit -r src/ -f json -o bandit-report.json
           bandit -r src/ -f txt
         continue-on-error: false
+
       - name: Upload Bandit Report
         uses: actions/upload-artifact@v4
         if: always()
         with:
           name: bandit-security-report
           path: bandit-report.json
-      - name: Run Pytest Unit Tests
-        run: |
-          python -m pytest tests/ -v --tb=short
 
+      - name: Run Pytest with Coverage
+        run: |
+          python -m pytest tests/ -v --tb=short \
+            --cov=src \
+            --cov-report=term-missing \
+            --cov-report=xml:coverage.xml \
+            --cov-fail-under=80
+
+      - name: Upload Coverage Report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage-report
+          path: coverage.xml

@@ -2,8 +2,14 @@
 # Data processing utilities for SecurePipe
 # SECURE VERSION - vulnerabilities fixed
 
-import os
-import subprocess #nosec B404
+import os  # noqa: F401
+import subprocess  # nosec B404
+
+# Load database credentials from environment variables
+DATABASE_HOST = os.environ.get("DATABASE_HOST")
+DATABASE_PORT = os.environ.get("DATABASE_PORT")
+DATABASE_NAME = os.environ.get("DATABASE_NAME")
+DATABASE_PASSWORD = os.environ.get("DATABASE_PASSWORD")
 
 # =========================================================
 # FIX 1: ENVIRONMENT VARIABLE (REPLACES HARDCODED PASSWORD)
@@ -12,6 +18,7 @@ import subprocess #nosec B404
 # The source code contains zero secrets.
 # On the server, these are set as system environment variables.
 # In Github actions, these are set as encrypted GitHub secrets.
+
 
 def get_database_connection_string():
     """
@@ -31,6 +38,7 @@ def get_database_connection_string():
         f"?password={DATABASE_PASSWORD}"
     )
 
+
 # ============================================================
 # FIX 2 : shell=False with argument list (replaces shell=True)
 # ============================================================
@@ -38,11 +46,8 @@ def get_database_connection_string():
 # Input is validated and passed as structured argument list
 # not as a raw string to a shell interpreter.
 
-ALLOWED_HOSTS = [
-    "google.com"
-    "github.com"
-    "example.com"
-]
+ALLOWED_HOSTS = ["google.com", "github.com", "example.com"]
+
 
 def run_ping(target_host):
     """
@@ -58,12 +63,13 @@ def run_ping(target_host):
         )
     result = subprocess.run(
         ["/bin/ping", "-c", "1", target_host],
-        shell=False, #nosec B603
+        shell=False,  # nosec B603
         capture_output=True,
         text=True,
-        timeout=10
+        timeout=10,
     )
     return result.stdout
+
 
 def process_data(data):
     """
