@@ -15,40 +15,32 @@ Every push to this repository is automatically scanned for security vulnerabilit
 
 This repository also documents a real vulnerability lifecycle: a hardcoded credential and a shell-injection flaw were intentionally introduced, automatically caught by the pipeline's Bandit scan, and then properly fixed — with the entire process visible in the commit history below.
 
-## Architecture 
-  ┌──────────────────────────┐
-│ Developer's Machine │
-│ src/ + tests/ + commit │
-└────────────┬──────────────┘
-│ git push
-▼
-┌──────────────────────────┐
-│ GitHub Repo │
-│ Detects push to main │
-└────────────┬──────────────┘
-│ triggers
-▼
-┌──────────────────────────────────────────┐
-│ GitHub Actions Runner (Ubuntu) │
-│ │
-│ 1. Checkout code │
-│ 2. Set up Python │
-│ 3. Install dependencies │
-│ 4. Flake8 — code quality ──┐ │
-│ 5. Black — formatting ──┤ │
-│ 6. Bandit — SAST security ──┤ any│
-│ 7. Upload Bandit report ──┤ gate│
-│ 8. Pytest + Coverage (≥80%) ──┤ fail│
-│ 9. Upload coverage report ──┘stops│
-│ pipe │
-└────────────┬───────────────────────────────┘
-│
-┌─────────┴──────────┐
-▼ ▼
-✅ All gates pass ❌ Any gate fails
-Ready for Pipeline stops,
-deployment developer notified,
-code blocked  
+## Architecture
+
+```mermaid
+flowchart TD
+    A[Developer pushes code] --> B[GitHub detects push to main]
+    B --> C[GitHub Actions Runner spins up - Ubuntu]
+    C --> D[Step 1: Checkout repository]
+    D --> E[Step 2: Set up Python 3.13]
+    E --> F[Step 3: Install dependencies]
+    F --> G[Step 4: Flake8 - Code Quality]
+    G -->|fail| Z
+    G -->|pass| H[Step 5: Black - Formatting Check]
+    H -->|fail| Z
+    H -->|pass| I[Step 6: Bandit - SAST Security Scan]
+    I -->|fail| Z
+    I -->|pass| J[Step 7: Upload Bandit Report]
+    J --> K[Step 8: Pytest + Coverage over 80 percent]
+    K -->|fail| Z
+    K -->|pass| L[Step 9: Upload Coverage Report]
+    L --> M[✅ All gates passed - Ready for deployment]
+    Z[❌ Pipeline stops - Developer notified - Code blocked]
+
+    style M fill:#2d8a4e,color:#ffffff
+    style Z fill:#8a2d2d,color:#ffffff
+```
+
 ## SDLC Mapping
 
 | SDLC Phase | How This Project Addresses It |
