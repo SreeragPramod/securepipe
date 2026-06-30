@@ -1,59 +1,44 @@
 # src/data_processor.py
 # Data processing utilities for SecurePipe
-# SECURE VERSION - vulnerabilities fixed
+# SECURE VERSION — vulnerabilities fixed
 
-import os  # noqa: F401
+
+import os
 import subprocess  # nosec B404
-
-# Load database credentials from environment variables
-DATABASE_HOST = os.environ.get("DATABASE_HOST")
-DATABASE_PORT = os.environ.get("DATABASE_PORT")
-DATABASE_NAME = os.environ.get("DATABASE_NAME")
-DATABASE_PASSWORD = os.environ.get("DATABASE_PASSWORD")
-
-# =========================================================
-# FIX 1: ENVIRONMENT VARIABLE (REPLACES HARDCODED PASSWORD)
-# =========================================================
-# Credentials are now read from environment variables.
-# The source code contains zero secrets.
-# On the server, these are set as system environment variables.
-# In Github actions, these are set as encrypted GitHub secrets.
 
 
 def get_database_connection_string():
     """
     Returns a database connection string.
-    SECURE: All credentials are read from environment variables.
-    Raises RuntimeError if the password environment variable
-    is not set - fails loudly rather than silently.
+    SECURE: Credentials are read from environment variables
+    at call time (not import time) so the function reflects
+    the current environment and can be tested in isolation.
+    Raises RuntimeError if the password is missing rather
+    than silently connecting without credentials.
     """
-    if not DATABASE_PASSWORD:
+    password = os.environ.get("DATABASE_PASSWORD")
+    if not password:
         raise RuntimeError(
-            "DATABASE_PASSWORD environment variable is not set."
-            "Refusing a connect without credentials."
+            "DATABASE_PASSWORD environment variable is not set. "
+            "Refusing to connect without credentials."
         )
-    return (
-        f"postgresql://{DATABASE_HOST}"
-        f"{DATABASE_PORT}/{DATABASE_NAME}"
-        f"?password={DATABASE_PASSWORD}"
-    )
+    host = os.environ.get("DATABASE_HOST", "localhost")
+    port = os.environ.get("DATABASE_PORT", "5432")
+    name = os.environ.get("DATABASE_NAME", "securepipe_db")
+    return f"postgresql://{host}:{port}/{name}?password={password}"
 
 
-# ============================================================
-# FIX 2 : shell=False with argument list (replaces shell=True)
-# ============================================================
-# shell=False prevents OS command injection entirely.
-# Input is validated and passed as structured argument list
-# not as a raw string to a shell interpreter.
-
-ALLOWED_HOSTS = ["google.com", "github.com", "example.com"]
+ALLOWED_HOSTS = [
+    "google.com",
+    "github.com",
+    "example.com",
+]
 
 
 def run_ping(target_host):
     """
-    Pings a target host from an approved allowedlist.
-    SECURE: shell=False prevents commandd injection.
-    Input validation ensures only approved hosts are pinged.
+    Pings a target host from an approved allowlist.
+    SECURE: shell=False prevents command injection.
     Raises ValueError if the host is not in the allowlist.
     """
     if target_host not in ALLOWED_HOSTS:
@@ -61,9 +46,10 @@ def run_ping(target_host):
             f"Host '{target_host}' is not in the approved "
             f"allowlist. Refusing to execute."
         )
-    result = subprocess.run(
-        ["/bin/ping", "-c", "1", target_host],
-        shell=False,  # nosec B603
+
+    result = subprocess.run(  # nosec B603
+        ["/usr/bin/ping", "-c", "1", target_host],
+        shell=False,
         capture_output=True,
         text=True,
         timeout=10,
@@ -74,7 +60,7 @@ def run_ping(target_host):
 def process_data(data):
     """
     Simple data processing function.
-    Validate input before processing.
+    Validates input before processing.
     """
     if not data:
         raise ValueError("Data cannot be empty.")
